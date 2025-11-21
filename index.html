@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Gerador Automático de Horários</title>
+  <style>
+    * { box-sizing: border-box; font-family: Arial, Helvetica, sans-serif; }
+    body { margin: 0; padding: 20px; background: #f4f4f7; }
+    h1 { text-align: center; margin-bottom: 10px; }
+    .container { max-width: 1200px; margin: 0 auto; }
+
+    .card {
+      background: #ffffff;
+      padding: 16px;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 10px;
+      align-items: end;
+    }
+
+    label { font-size: 0.9rem; font-weight: bold; margin-bottom: 4px; display: block; }
+
+    input[type="text"], select {
+      width: 100%; padding: 7px 9px;
+      border-radius: 6px; border: 1px solid #ccc;
+      font-size: 0.9rem;
+    }
+
+    button {
+      padding: 9px 14px; border-radius: 999px; border: none;
+      cursor: pointer; font-size: 0.9rem; font-weight: bold;
+      background: #2563eb; color: #fff;
+      transition: filter .15s, transform .1s; width: 100%;
+    }
+
+    button:hover { filter: brightness(1.08); transform: translateY(-1px); }
+
+    button.secondary { background: #6b7280; }
+    button.export { background: #059669; }
+
+    .subtitle { font-size: 0.85rem; color: #555; margin-bottom: 10px; }
+
+    .actions-row { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+
+    .turmas-box {
+      border: 1px solid #d4d4d4;
+      border-radius: 6px;
+      padding: 6px;
+      max-height: 120px;
+      overflow-y: auto;
+      background: #f9fafb;
+      font-size: 0.85rem;
+    }
+
+    .turma-item {
+      display: inline-flex;
+      align-items: center;
+      margin-right: 10px;
+      margin-bottom: 4px;
+    }
+
+    .turma-item input {
+      margin-right: 4px;
+    }
+
+    .day-title {
+      background: #ffe000; padding: 6px 10px; border-radius: 8px 8px 0 0;
+      font-weight: bold; text-align: center; text-transform: uppercase;
+      margin-top: 10px;
+    }
+
+    table { width: 100%; border-collapse: collapse; background:#fff;
+      border-radius: 0 0 8px 8px; overflow:hidden; font-size:.8rem; }
+
+    th,td { border:1px solid #d4d4d4; padding:6px; text-align:center; }
+
+    .time-col { background:#f3f4f6; width:90px; font-weight:bold; }
+
+    .lesson-cell { min-height:40px; padding:3px; border-radius:4px;
+      font-size:.75rem; font-weight:bold; color:#111827; }
+
+    /* Cores por professor */
+    .color-0 { background:#bfdbfe; }
+    .color-1 { background:#fed7aa; }
+    .color-2 { background:#bbf7d0; }
+    .color-3 { background:#f9a8d4; }
+    .color-4 { background:#fee2e2; }
+    .color-5 { background:#e9d5ff; }
+    .color-6 { background:#fef08a; }
+    .color-7 { background:#bae6fd; }
+    .color-8 { background:#fecaca; }
+    .color-9 { background:#ddd6fe; }
+
+    .footer-note { font-size:.75rem; color:#555; margin-top:8px; }
+
+    @media print {
+      .no-print { display:none !important; }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>Gerador Automático de Horários</h1>
+
+  <!-- CADASTRO AUTOMÁTICO -->
+  <div class="card no-print">
+    <h2>Distribuir professor automaticamente</h2>
+    <p class="subtitle">
+      Respeita hora-atividade, carga horária (10h = 3 aulas por turma, 20h = 4 aulas por turma),
+      máximo de 2 aulas/dia por turma da mesma disciplina e sem choques de horário.
+    </p>
+
+    <div class="form-grid">
+      <div>
+        <label>Professor</label>
+        <input type="text" id="autoTeacherInput" placeholder="Nome do professor">
+      </div>
+
+      <div>
+        <label>Disciplina</label>
+        <input type="text" id="autoSubjectInput" placeholder="Ex.: MAT, PORT">
+      </div>
+
+      <div>
+        <label>Turmas em que leciona</label>
+        <div id="turmasCheckboxContainer" class="turmas-box"></div>
+      </div>
+
+      <div>
+        <label>Nova turma (cadastrar)</label>
+        <input type="text" id="newClassInput" placeholder="Ex.: 6º ano B">
+        <button type="button" id="addClassButton" style="margin-top:4px;">Adicionar turma</button>
+      </div>
+
+      <div>
+        <label>Dia de hora-atividade</label>
+        <select id="autoRestDaySelect"></select>
+      </div>
+
+      <div>
+        <label>Carga horária</label>
+        <select id="autoWorkloadSelect">
+          <option value="10">10h (3 aulas por turma)</option>
+          <option value="20" selected>20h (4 aulas por turma)</option>
+        </select>
+      </div>
+
+      <div>
+        <button id="autoDistributeButton">Distribuir automaticamente</button>
+      </div>
+
+      <div>
+        <button class="secondary" id="clearButton">Limpar quadro</button>
+      </div>
+    </div>
+
+    <div class="actions-row">
+      <button class="export" id="exportPDF">Exportar PDF</button>
+      <button class="export" id="exportXLS">Exportar XLS</button>
+    </div>
+
+    <p class="footer-note">
+      • O professor nunca é colocado no dia de hora-atividade.<br>
+      • Nunca fica em duas turmas no mesmo horário.<br>
+      • Em cada turma, em cada dia, há no máximo 2 aulas da mesma disciplina.<br>
+      • A distribuição é feita apenas nas turmas marcadas nas caixas de seleção.
+    </p>
+  </div>
+
+  <!-- QUADRO -->
+  <div class="card">
+    <h2>Quadro de horários</h2>
+    <div id="tablesContainer"></div>
+  </div>
+
+</div>
+
+<script>
+/* --- CONFIGURAÇÃO --- */
+const days = ["Segunda-feira","Terça-feira","Quarta-feira","Quinta-feira","Sexta-feira"];
+const timeSlots = ["07:45 - 08:30","08:30 - 09:15","09:15 - 10:00","10:15 - 11:00","11:00 - 11:45"];
+
+// Turmas iniciais (podem ser ampliadas)
+let classes = ["6º ano","7º ano 1","7º ano 2","8º ano","9º ano"];
+
+const timetable = {};
+
+const teacherColorMap = {};
+let teacherColorCounter = 0;
+const MAX_COLORS = 10;
+
+const teacherRestDay = {};
+const teacherWorkload = {};
+const MAX_LOAD = { "10": 3, "20": 4 };
+
+/* --- INICIALIZAÇÃO DA TABELA --- */
+function initTimetable() {
+  days.forEach(day => {
+    timetable[day] = {};
+    timeSlots.forEach(time => {
+      timetable[day][time] = {};
+      classes.forEach(c => {
+        timetable[day][time][c] = null;
+      });
+    });
+  });
+}
+
+function initDaySelect() {
+  const rest = document.getElementById("autoRestDaySelect");
+  days.forEach(d => {
+    const op = document.createElement("option");
+    op.value = d;
+    op.textContent = d;
+    rest.appendChild(op);
+  });
+}
+
+function renderClassCheckboxes() {
+  const cont = document.getElementById("turmasCheckboxContainer");
+  const previouslySelected = new Set(
+    Array.from(cont.querySelectorAll("input[name='turmaDist']:checked"))
+      .map(i => i.value)
+  );
+
+  cont.innerHTML = "";
+  classes.forEach(cls => {
+    const wrapper = document.createElement("label");
+    wrapper.className = "turma-item";
+
+    const cb = document.createElement("input");
+    cb.type = "checkbox";
+    cb.name = "turmaDist";
+    cb.value = cls;
+
+    // se nunca teve seleção, marca tudo por padrão
+    if (previouslySelected.size === 0 || previouslySelected.has(cls)) {
+      cb.checked = true;
+    }
+
+    const span = document.createElement("span");
+    span.textContent = cls;
+
+    wrapper.appendChild(cb);
+    wrapper.appendChild(span);
+    cont.appendChild(wrapper);
+  });
+}
+
+function getColorClass(teacher) {
+  if (!teacherColorMap[teacher]) {
+    teacherColorMap[teacher] = teacherColorCounter % MAX_COLORS;
+    teacherColorCounter++;
+  }
+  return "color-" + teacherColorMap[teacher];
+}
+
+/* --- VERIFICAÇÕES --- */
+function teacherBusy(teacher, day, time) {
+  for (const c of classes) {
+    const l = timetable[day][time][c];
+    if (l && l.teacher === teacher) return true;
+  }
+  return false;
+}
+
+function countClassTotal(teacher, cls) {
+  let t = 0;
+  days.forEach(d => timeSlots.forEach(time => {
+    const l = timetable[d][time][cls];
+    if (l && l.teacher === teacher) t++;
+  }));
+  return t;
+}
+
+function countSubjectInDay(subject, cls, day) {
+  let t = 0;
+  timeSlots.forEach(time => {
+    const l = timetable[day][time][cls];
+    if (l && l.subject.toUpperCase() === subject) t++;
+  });
+  return t;
+}
+
+/* --- CADASTRAR NOVA TURMA --- */
+function addClass() {
+  const input = document.getElementById("newClassInput");
+  let name = input.value.trim();
+  if (!name) {
+    alert("Digite o nome da turma para cadastrar.");
+    return;
+  }
+  if (classes.includes(name)) {
+    alert("Essa turma já existe.");
+    return;
+  }
+
+  classes.push(name);
+
+  // Atualiza a estrutura de horários para incluir essa nova turma
+  days.forEach(day => {
+    timetable[day] = timetable[day] || {};
+    timeSlots.forEach(time => {
+      timetable[day][time] = timetable[day][time] || {};
+      timetable[day][time][name] = null;
+    });
+  });
+
+  input.value = "";
+  renderClassCheckboxes();
+  renderTables();
+}
+
+/* --- DISTRIBUIR AUTOMATICAMENTE --- */
+function autoDistribute() {
+  const teacherName = document.getElementById("autoTeacherInput").value.trim();
+  const subjectName = document.getElementById("autoSubjectInput").value.trim();
+  const restDay = document.getElementById("autoRestDaySelect").value;
+  const workload = document.getElementById("autoWorkloadSelect").value;
+
+  if (!teacherName || !subjectName) {
+    alert("Preencha o nome do professor e a disciplina.");
+    return;
+  }
+
+  const teacher = teacherName.toUpperCase();
+  const subject = subjectName.toUpperCase();
+
+  // Turmas selecionadas
+  const selectedClasses = Array.from(
+    document.querySelectorAll("input[name='turmaDist']:checked")
+  ).map(i => i.value);
+
+  if (selectedClasses.length === 0) {
+    alert("Selecione pelo menos uma turma em que o professor leciona.");
+    return;
+  }
+
+  teacherRestDay[teacher] = restDay;
+  teacherWorkload[teacher] = workload;
+  getColorClass(teacher);
+
+  const limit = MAX_LOAD[workload];   // 3 ou 4 aulas por turma
+  const limitPerDay = 2;              // máximo 2 aulas/dia/turma da disciplina
+
+  let faltaTotal = 0, alocadas = 0, problemas = [];
+
+  selectedClasses.forEach(cls => {
+    let falta = Math.max(limit - countClassTotal(teacher, cls), 0);
+    faltaTotal += falta;
+
+    outer:
+    for (const day of days) {
+      if (day === restDay) continue;
+
+      for (const time of timeSlots) {
+        if (falta <= 0) break outer;
+
+        timetable[day] = timetable[day] || {};
+        timetable[day][time] = timetable[day][time] || {};
+        if (!(cls in timetable[day][time])) timetable[day][time][cls] = null;
+
+        if (timetable[day][time][cls] !== null) continue;
+        if (teacherBusy(teacher, day, time)) continue;
+
+        if (countSubjectInDay(subject, cls, day) >= limitPerDay) continue;
+
+        timetable[day][time][cls] = { teacher: teacher, subject: subjectName };
+        falta--; alocadas++;
+      }
+    }
+
+    if (falta > 0)
+      problemas.push(`Turma ${cls}: faltaram ${falta} aula(s) disponíveis.`);
+  });
+
+  renderTables();
+
+  if (faltaTotal === 0) alert("Nada a distribuir: a carga já está completa nas turmas selecionadas.");
+  else if (problemas.length === 0) alert("Distribuição concluída com sucesso.");
+  else alert("Distribuição parcial:\n\n" + problemas.join("\n"));
+}
+
+/* --- LIMPAR QUADRO (CORRIGIDO) --- */
+function clearAll() {
+  if (!confirm("Deseja realmente limpar TODO o quadro de horários?\nAs turmas cadastradas serão mantidas.")) return;
+
+  // Zera completamente a estrutura de horários
+  initTimetable();
+
+  // Zera configurações de professores (para poder começar tudo de novo)
+  for (const k in teacherRestDay) delete teacherRestDay[k];
+  for (const k in teacherWorkload) delete teacherWorkload[k];
+  for (const k in teacherColorMap) delete teacherColorMap[k];
+  teacherColorCounter = 0;
+
+  // Limpa campos de texto
+  document.getElementById("autoTeacherInput").value = "";
+  document.getElementById("autoSubjectInput").value = "";
+
+  // Re-renderiza apenas o quadro (as turmas continuam)
+  renderTables();
+}
+
+/* --- EXPORTAR PDF --- */
+function exportPDF() {
+  window.print();
+}
+
+/* --- EXPORTAR XLS (CSV) --- */
+function exportXLS() {
+  let rows = [["Dia","Horario","Turma","Professor","Disciplina"]];
+
+  days.forEach(day => timeSlots.forEach(time => {
+    classes.forEach(cls => {
+      const l = timetable[day][time][cls];
+      if (l) rows.push([day,time,cls,l.teacher,l.subject]);
+    });
+  }));
+
+  let csv = rows.map(r => r.join(";")).join("\n");
+  let blob = new Blob([csv], {type:"text/csv;charset=utf-8;"});
+
+  let a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "horario_escolar.csv";
+  a.click();
+}
+
+/* --- RENDER TABELAS --- */
+function renderTables() {
+  const container = document.getElementById("tablesContainer");
+  container.innerHTML = "";
+
+  days.forEach(day => {
+    container.innerHTML += `<div class='day-title'>${day}</div>`;
+
+    let html = `<table><thead><tr>
+      <th class='time-col'>Horário</th>`;
+
+    classes.forEach(c => html += `<th>${c}</th>`);
+
+    html += `</tr></thead><tbody>`;
+
+    timeSlots.forEach(time => {
+      html += `<tr><td class='time-col'>${time}</td>`;
+      classes.forEach(cls => {
+        const l = timetable[day][time][cls];
+        if (!l) html += `<td></td>`;
+        else
+          html += `<td><div class='lesson-cell ${getColorClass(l.teacher)}'>${l.subject}<br>${l.teacher}</div></td>`;
+      });
+      html += `</tr>`;
+    });
+
+    html += "</tbody></table>";
+    container.innerHTML += html;
+  });
+}
+
+/* --- INICIAR --- */
+initTimetable();
+initDaySelect();
+renderClassCheckboxes();
+renderTables();
+
+document.getElementById("autoDistributeButton").onclick = autoDistribute;
+document.getElementById("clearButton").onclick = clearAll;
+document.getElementById("exportPDF").onclick = exportPDF;
+document.getElementById("exportXLS").onclick = exportXLS;
+document.getElementById("addClassButton").onclick = addClass;
+</script>
+</body>
+</html>
+
