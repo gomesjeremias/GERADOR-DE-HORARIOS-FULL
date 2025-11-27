@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <title>Gerador Automático de Horários</title>
+
   <style>
     * { box-sizing: border-box; font-family: Arial, Helvetica, sans-serif; }
     body { margin: 0; padding: 20px; background: #f4f4f7; }
@@ -44,18 +45,13 @@
     button.secondary { background: #6b7280; }
     button.export { background: #059669; }
 
-    .subtitle { font-size: 0.85rem; color: #555; margin-bottom: 10px; }
-
-    .actions-row { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
-
     .turmas-box {
       border: 1px solid #d4d4d4;
       border-radius: 6px;
       padding: 6px;
-      max-height: 120px;
+      max-height: 150px;
       overflow-y: auto;
       background: #f9fafb;
-      font-size: 0.85rem;
     }
 
     .turma-item {
@@ -63,9 +59,8 @@
       align-items: center;
       margin-right: 10px;
       margin-bottom: 4px;
+      font-size: 0.85rem;
     }
-
-    .turma-item input { margin-right: 4px; }
 
     .day-title {
       background: #ffe000; padding: 6px 10px; border-radius: 8px 8px 0 0;
@@ -103,13 +98,15 @@
 </head>
 <body>
 <div class="container">
+
   <h1>Gerador Automático de Horários</h1>
 
-  <!-- CADASTRO AUTOMÁTICO -->
+  <!-- PAINEL PRINCIPAL -->
   <div class="card no-print">
     <h2>Distribuir professor automaticamente</h2>
 
     <div class="form-grid">
+
       <div>
         <label>Professor</label>
         <input type="text" id="autoTeacherInput" placeholder="Nome do professor">
@@ -143,14 +140,17 @@
       <div>
         <button class="secondary" id="clearButton">Limpar quadro</button>
       </div>
+
     </div>
 
     <div class="actions-row">
       <button class="export" id="exportPDF">Exportar PDF</button>
       <button class="export" id="exportXLS">Exportar XLS</button>
     </div>
+
   </div>
 
+  <!-- QUADRO -->
   <div class="card">
     <h2>Quadro de horários</h2>
     <div id="tablesContainer"></div>
@@ -159,11 +159,26 @@
 </div>
 
 <script>
-/* ---------------- CONFIG PRINCIPAL ---------------- */
+/* ------------------------------------------------------
+   CONFIGURAÇÃO INICIAL
+---------------------------------------------------------*/
 
 const days = ["Segunda-feira","Terça-feira","Quarta-feira","Quinta-feira","Sexta-feira"];
-const timeSlots = ["07:45 - 08:30","08:30 - 09:15","09:15 - 10:00","10:15 - 11:00","11:00 - 11:45"];
-let classes = ["6º ano 01","6º ano 02","6º ano 03","7º ano 01","7º ano 02","8º ano 01","8º ano 02","9º ano 01","9º ano 02"];
+
+const timeSlots = [
+  "07:45 - 08:30",
+  "08:30 - 09:15",
+  "09:15 - 10:00",
+  "10:15 - 11:00",
+  "11:00 - 11:45"
+];
+
+let classes = [
+  "6º ano 01","6º ano 02","6º ano 03",
+  "7º ano 01","7º ano 02",
+  "8º ano 01","8º ano 02",
+  "9º ano 01","9º ano 02"
+];
 
 const timetable = {};
 
@@ -177,7 +192,9 @@ const COLOR_CODES = [
 
 const teacherRestDay = {};
 
-/* ---------------- INICIALIZAÇÃO ---------------- */
+/* ------------------------------------------------------
+   INICIALIZAÇÃO
+---------------------------------------------------------*/
 
 function initTimetable() {
   days.forEach(day => {
@@ -190,7 +207,7 @@ function initTimetable() {
 }
 
 function initDaySelect() {
-  const sel = document.getElementById("autoRestDaySelect");
+  let sel = document.getElementById("autoRestDaySelect");
   days.forEach(d => {
     let op = document.createElement("option");
     op.value = d;
@@ -222,10 +239,12 @@ function getColorClass(teacher) {
   return "color-" + getColorIndex(teacher);
 }
 
-/* ---------------- VERIFICAÇÕES ---------------- */
+/* ------------------------------------------------------
+   VERIFICAÇÕES
+---------------------------------------------------------*/
 
-function teacherBusy(teacher, day, time) {
-  for (let cls of classes) {
+function teacherBusy(teacher, day, time, selectedClasses) {
+  for (let cls of selectedClasses) {
     let l = timetable[day][time][cls];
     if (l && l.teacher === teacher) return true;
   }
@@ -233,15 +252,17 @@ function teacherBusy(teacher, day, time) {
 }
 
 function countSubjectInDay(subject, cls, day) {
-  let t = 0;
-  timeSlots.forEach(time => {
-    let l = timetable[day][time][cls];
-    if (l && l.subject.toUpperCase() === subject.toUpperCase()) t++;
+  let c = 0;
+  timeSlots.forEach(t => {
+    const l = timetable[day][t][cls];
+    if (l && l.subject.toUpperCase() === subject.toUpperCase()) c++;
   });
-  return t;
+  return c;
 }
 
-/* ---------------- CADASTRAR TURMA ---------------- */
+/* ------------------------------------------------------
+   CADASTRAR TURMA
+---------------------------------------------------------*/
 
 function addClass() {
   let name = document.getElementById("newClassInput").value.trim();
@@ -261,9 +282,12 @@ function addClass() {
   renderTables();
 }
 
-/* ---------------- DISTRIBUIR AULAS ---------------- */
+/* ------------------------------------------------------
+   DISTRIBUIÇÃO AUTOMÁTICA
+---------------------------------------------------------*/
 
 function autoDistribute() {
+
   const teacherName = document.getElementById("autoTeacherInput").value.trim();
   const subjectName = document.getElementById("autoSubjectInput").value.trim();
   const restDay = document.getElementById("autoRestDaySelect").value;
@@ -273,6 +297,7 @@ function autoDistribute() {
 
   const teacher = teacherName.toUpperCase();
   const subject = subjectName.toUpperCase();
+
   teacherRestDay[teacher] = restDay;
   getColorIndex(teacher);
 
@@ -285,7 +310,7 @@ function autoDistribute() {
 
   selectedClasses.forEach(cls => {
 
-    let falta = 99999; // SEM LIMITE
+    let falta = 99999;
 
     outer:
     for (let day of days) {
@@ -296,8 +321,11 @@ function autoDistribute() {
 
         if (falta <= 0) break outer;
 
+        if (!selectedClasses.includes(cls)) continue;
+
         if (timetable[day][time][cls] !== null) continue;
-        if (teacherBusy(teacher, day, time)) continue;
+
+        if (teacherBusy(teacher, day, time, selectedClasses)) continue;
 
         if (countSubjectInDay(subject, cls, day) >= 2) continue;
 
@@ -315,7 +343,9 @@ function autoDistribute() {
   alert("Distribuição concluída.");
 }
 
-/* ---------------- LIMPAR QUADRO ---------------- */
+/* ------------------------------------------------------
+   LIMPAR QUADRO
+---------------------------------------------------------*/
 
 function clearAll() {
   if (!confirm("Deseja limpar todo o quadro?")) return;
@@ -332,43 +362,53 @@ function clearAll() {
   renderTables();
 }
 
-/* ---------------- EXPORTAR PDF ---------------- */
+/* ------------------------------------------------------
+   EXPORTAR PDF
+---------------------------------------------------------*/
 
 function exportPDF() {
   window.print();
 }
 
-/* ---------------- EXPORTAR XLS COM CORES ---------------- */
+/* ------------------------------------------------------
+   EXPORTAR XLS COM CORES
+---------------------------------------------------------*/
 
 function exportXLS() {
   let html = `
-    <html><head><meta charset="UTF-8">
-    <style>
-      table { border-collapse: collapse; }
-      th, td { border:1px solid #000; padding:4px; text-align:center; }
-    </style></head><body>
-  `;
+  <html><head><meta charset="UTF-8">
+  <style>
+    table { border-collapse: collapse; }
+    th, td { border:1px solid #000; padding:4px; text-align:center; }
+  </style>
+  </head><body>`;
 
   days.forEach(day => {
+
     html += `<h3>${day}</h3><table><thead><tr><th>Horário</th>`;
+
     classes.forEach(cls => html += `<th>${cls}</th>`);
-    html += `</tr></thead><tbody>`;
+    html += "</tr></thead><tbody>";
 
     timeSlots.forEach(time => {
       html += `<tr><td>${time}</td>`;
+
       classes.forEach(cls => {
-        let l = timetable[day][time][cls];
-        if (!l) html += `<td></td>`;
-        else {
+        const l = timetable[day][time][cls];
+        if (!l) {
+          html += "<td></td>";
+        } else {
           let idx = getColorIndex(l.teacher);
-          let cor = COLOR_CODES[idx];
-          html += `<td style="background:${cor}; font-weight:bold;">${l.subject}<br>${l.teacher}</td>`;
+          let bg = COLOR_CODES[idx];
+          html += `<td style="background:${bg};font-weight:bold">${l.subject}<br>${l.teacher}</td>`;
         }
       });
-      html += `</tr>`;
+
+      html += "</tr>";
     });
 
-    html += `</tbody></table><br>`;
+    html += "</tbody></table><br>";
+
   });
 
   html += "</body></html>";
@@ -384,36 +424,47 @@ function exportXLS() {
   URL.revokeObjectURL(url);
 }
 
-/* ---------------- RENDER TABELAS ---------------- */
+/* ------------------------------------------------------
+   RENDER TABELAS
+---------------------------------------------------------*/
 
 function renderTables() {
   const cont = document.getElementById("tablesContainer");
   cont.innerHTML = "";
 
   days.forEach(day => {
+
     cont.innerHTML += `<div class="day-title">${day}</div>`;
+
     let html = `<table><thead><tr><th class="time-col">Horário</th>`;
 
     classes.forEach(cls => html += `<th>${cls}</th>`);
-    html += `</tr></thead><tbody>`;
+
+    html += "</tr></thead><tbody>";
 
     timeSlots.forEach(time => {
+
       html += `<tr><td class="time-col">${time}</td>`;
+
       classes.forEach(cls => {
-        let l = timetable[day][time][cls];
-        if (!l) html += `<td></td>`;
-        else
-          html += `<td><div class="lesson-cell ${getColorClass(l.teacher)}">${l.subject}<br>${l.teacher}</div></td>`;
+        const l = timetable[day][time][cls];
+        if (!l) html += "<td></td>";
+        else html += `<td><div class="lesson-cell ${getColorClass(l.teacher)}">${l.subject}<br>${l.teacher}</div></td>`;
       });
-      html += `</tr>`;
+
+      html += "</tr>";
     });
 
     html += "</tbody></table>";
+
     cont.innerHTML += html;
+
   });
 }
 
-/* ---------------- INICIAR SISTEMA ---------------- */
+/* ------------------------------------------------------
+   INICIAR SISTEMA
+---------------------------------------------------------*/
 
 initTimetable();
 initDaySelect();
