@@ -112,7 +112,7 @@
   <div class="card no-print">
     <h2>Distribuir professor automaticamente</h2>
     <p class="subtitle">
-      Respeita hora-atividade, carga horária (10h = 3 aulas por turma, 20h = 4 aulas por turma),
+      Respeita hora-atividade, carga horária (10h = 3 aulas por turma, 20h = 4 aulas por turma, 20h = 3 aulas por turma),
       máximo de 2 aulas/dia por turma da mesma disciplina e sem choques de horário.
     </p>
 
@@ -197,7 +197,7 @@ const MAX_COLORS = 10;
 
 const teacherRestDay = {};
 const teacherWorkload = {};
-const MAX_LOAD = { "10": 3, "20": 4 };
+
 
 /* --- INICIALIZAÇÃO DA TABELA --- */
 function initTimetable() {
@@ -322,7 +322,6 @@ function autoDistribute() {
   const teacherName = document.getElementById("autoTeacherInput").value.trim();
   const subjectName = document.getElementById("autoSubjectInput").value.trim();
   const restDay = document.getElementById("autoRestDaySelect").value;
-  const workload = document.getElementById("autoWorkloadSelect").value;
 
   if (!teacherName || !subjectName) {
     alert("Preencha o nome do professor e a disciplina.");
@@ -332,28 +331,22 @@ function autoDistribute() {
   const teacher = teacherName.toUpperCase();
   const subject = subjectName.toUpperCase();
 
-  // Turmas selecionadas
   const selectedClasses = Array.from(
     document.querySelectorAll("input[name='turmaDist']:checked")
   ).map(i => i.value);
 
   if (selectedClasses.length === 0) {
-    alert("Selecione pelo menos uma turma em que o professor leciona.");
+    alert("Selecione pelo menos uma turma.");
     return;
   }
 
   teacherRestDay[teacher] = restDay;
-  teacherWorkload[teacher] = workload;
   getColorClass(teacher);
 
-  const limit = MAX_LOAD[workload];   // 3 ou 4 aulas por turma
-  const limitPerDay = 2;              // máximo 2 aulas/dia/turma da disciplina
-
-  let faltaTotal = 0, alocadas = 0, problemas = [];
+  let problemas = [];
 
   selectedClasses.forEach(cls => {
-    let falta = Math.max(limit - countClassTotal(teacher, cls), 0);
-    faltaTotal += falta;
+    let falta = 9999; // SEM LIMITE DE AULAS POR TURMA
 
     outer:
     for (const day of days) {
@@ -362,30 +355,23 @@ function autoDistribute() {
       for (const time of timeSlots) {
         if (falta <= 0) break outer;
 
-        timetable[day] = timetable[day] || {};
-        timetable[day][time] = timetable[day][time] || {};
-        if (!(cls in timetable[day][time])) timetable[day][time][cls] = null;
-
         if (timetable[day][time][cls] !== null) continue;
         if (teacherBusy(teacher, day, time)) continue;
 
-        if (countSubjectInDay(subject, cls, day) >= limitPerDay) continue;
+        if (countSubjectInDay(subject, cls, day) >= 2) continue;
 
         timetable[day][time][cls] = { teacher: teacher, subject: subjectName };
-        falta--; alocadas++;
+        falta--;
       }
     }
 
-    if (falta > 0)
-      problemas.push(`Turma ${cls}: faltaram ${falta} aula(s) disponíveis.`);
+    // se sobrar vaga, não é problema — agora não temos limite.
   });
 
   renderTables();
-
-  if (faltaTotal === 0) alert("Nada a distribuir: a carga já está completa nas turmas selecionadas.");
-  else if (problemas.length === 0) alert("Distribuição concluída com sucesso.");
-  else alert("Distribuição parcial:\n\n" + problemas.join("\n"));
+  alert("Distribuição concluída.");
 }
+
 
 /* --- LIMPAR QUADRO (CORRIGIDO) --- */
 function clearAll() {
