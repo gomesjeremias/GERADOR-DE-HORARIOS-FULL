@@ -245,10 +245,13 @@ function getColorClass(teacher) {
    VERIFICAÇÕES
 ---------------------------------------------------------*/
 
-function teacherBusy(teacher, day, time, selectedClasses) {
-  for (let cls of selectedClasses) {
-    let l = timetable[day][time][cls];
-    if (l && l.teacher === teacher) return true;
+function teacherBusy(teacher, day, time) {
+  // CORRETO: só está ocupado se ELE já tem aula nesse horário
+  for (let turma in timetable[day][time]) {
+    let aula = timetable[day][time][turma];
+    if (aula && aula.teacher === teacher) {
+      return true;
+    }
   }
   return false;
 }
@@ -285,7 +288,7 @@ function addClass() {
 }
 
 /* ------------------------------------------------------
-   DISTRIBUIR AULAS
+   DISTRIBUIÇÃO AUTOMÁTICA
 ---------------------------------------------------------*/
 
 function autoDistribute() {
@@ -327,7 +330,7 @@ function autoDistribute() {
 
         if (timetable[day][time][cls] !== null) continue;
 
-        if (teacherBusy(teacher, day, time, selectedClasses)) continue;
+        if (teacherBusy(teacher, day, time)) continue;
 
         if (countSubjectInDay(subject, cls, day) >= 2) continue;
 
