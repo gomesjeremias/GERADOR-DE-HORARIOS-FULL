@@ -292,56 +292,67 @@
 
   // ---------------- DISTRIBUIÇÃO AUTOMÁTICA ----------------
   function autoDistribute() {
-    const teacherName = document.getElementById("autoTeacherInput").value.trim();
-    const subjectName = document.getElementById("autoSubjectInput").value.trim();
-    const restDay = document.getElementById("autoRestDaySelect").value;
+  const teacherName = document.getElementById("autoTeacherInput").value.trim();
+  const subjectName = document.getElementById("autoSubjectInput").value.trim();
+  const restDay = document.getElementById("autoRestDaySelect").value;
 
-    if (!teacherName || !subjectName) {
-      alert("Preencha Professor e Disciplina.");
-      return;
-    }
-
-    const teacherUpper = teacherName.toUpperCase();
-    const subjectUpper = subjectName.toUpperCase();
-    teacherRestDay[teacherUpper] = restDay;
-    getColorIndex(teacherUpper);
-
-    const selectedClasses = Array.from(
-      document.querySelectorAll("input[name='turmaDist']:checked")
-    ).map(i => i.value);
-
-    if (selectedClasses.length === 0) {
-      alert("Selecione pelo menos uma turma.");
-      return;
-    }
-
-    selectedClasses.forEach(cls => {
-      // sem limite de quantidade, apenas regras pedagógicas
-      for (const day of days) {
-
-        if (day === restDay) continue;
-
-        for (const time of timeSlots) {
-
-          if (timetable[day][time][cls] !== null) continue;
-
-          if (teacherBusy(teacherUpper, day, time)) continue;
-
-          if (countSubjectInDay(subjectUpper, cls, day) >= 2) continue;
-
-          timetable[day][time][cls] = {
-            teacherName,
-            teacherUpper,
-            subjectName,
-            subjectUpper
-          };
-        }
-      }
-    });
-
-    renderTables();
-    alert("Distribuição concluída.");
+  if (!teacherName || !subjectName) {
+    alert("Preencha Professor e Disciplina.");
+    return;
   }
+
+  const teacherUpper = teacherName.toUpperCase();
+  const subjectUpper = subjectName.toUpperCase();
+  teacherRestDay[teacherUpper] = restDay;
+  getColorIndex(teacherUpper); // garante cor fixa para o professor
+
+  const selectedClasses = Array.from(
+    document.querySelectorAll("input[name='turmaDist']:checked")
+  ).map(i => i.value);
+
+  if (selectedClasses.length === 0) {
+    alert("Selecione pelo menos uma turma.");
+    return;
+  }
+
+  // NOVA LÓGICA:
+  // para cada dia/horário, tenta colocar o professor em UMA turma disponível.
+  for (const day of days) {
+
+    if (day === restDay) continue; // dia de hora-atividade do professor
+
+    for (const time of timeSlots) {
+
+      // se o professor já está dando aula em alguma turma nesse horário, pula
+      if (teacherBusy(teacherUpper, day, time)) continue;
+
+      // percorre as turmas selecionadas procurando a primeira vaga válida
+      for (const cls of selectedClasses) {
+
+        // se já tem aula nessa turma nesse horário, pula
+        if (timetable[day][time][cls] !== null) continue;
+
+        // limita a, no máximo, 2 aulas dessa disciplina por dia na mesma turma
+        if (countSubjectInDay(subjectUpper, cls, day) >= 2) continue;
+
+        // achou uma vaga: agenda a aula e passa para o próximo horário
+        timetable[day][time][cls] = {
+          teacherName,
+          teacherUpper,
+          subjectName,
+          subjectUpper
+        };
+
+        // professor já está ocupando esse horário em alguma turma
+        break;
+      }
+    }
+  }
+
+  renderTables();
+  alert("Distribuição concluída.");
+}
+
 
   // ---------------- LIMPAR QUADRO ----------------
   function clearAll() {
