@@ -1,492 +1,773 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Gerador Automático de Horários</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerador Automático de Horários - Multi-Professor</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
 
-  <style>
-    * { box-sizing: border-box; font-family: Arial, Helvetica, sans-serif; }
-    body { margin: 0; padding: 20px; background: #f4f4f7; }
-    h1 { text-align: center; margin-bottom: 10px; }
-    .container { max-width: 1300px; margin: 0 auto; }
+        :root {
+            --primary-color: #4a00e0;
+            --secondary-color: #8e2de2;
+            --background-color: #f4f7f6;
+            --card-background: #ffffff;
+            --text-color: #333;
+            --shadow-color: rgba(0, 0, 0, 0.1);
+        }
 
-    .card {
-      background: #ffffff;
-      padding: 16px;
-      border-radius: 10px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-      margin-bottom: 20px;
-    }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: var(--text-color);
+            padding: 20px;
+            min-height: 100vh;
+        }
 
-    .form-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 10px;
-      align-items: end;
-    }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
 
-    label { font-size: 0.9rem; font-weight: bold; margin-bottom: 4px; display: block; }
+        h1 {
+            color: var(--card-background);
+            text-align: center;
+            margin-bottom: 30px;
+            font-weight: 700;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        }
 
-    input[type="text"], select {
-      width: 100%; padding: 7px 9px;
-      border-radius: 6px; border: 1px solid #ccc;
-      font-size: 0.9rem;
-    }
+        .card {
+            background-color: var(--card-background);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px var(--shadow-color);
+            margin-bottom: 30px;
+        }
 
-    button {
-      padding: 9px 14px; border-radius: 8px; border: none;
-      cursor: pointer; font-size: 0.9rem; font-weight: bold;
-      background: #2563eb; color: #fff;
-      transition: filter .15s, transform .1s; width: 100%;
-    }
+        h2 {
+            color: var(--primary-color);
+            border-bottom: 2px solid var(--secondary-color);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
 
-    button:hover { filter: brightness(1.08); transform: translateY(-1px); }
+        .input-group {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+            align-items: flex-end;
+        }
 
-    button.secondary { background: #6b7280; }
-    button.export { background: #059669; }
+        .input-group > div {
+            flex-grow: 1;
+        }
 
-    .turmas-box {
-      border: 1px solid #d4d4d4;
-      border-radius: 6px;
-      padding: 6px;
-      max-height: 150px;
-      overflow-y: auto;
-      background: #f9fafb;
-    }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #555;
+        }
 
-    .turma-item {
-      display: inline-flex;
-      align-items: center;
-      margin-right: 10px;
-      margin-bottom: 4px;
-      font-size: 0.85rem;
-    }
+        input[type="text"], input[type="number"], select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-sizing: border-box;
+            transition: border-color 0.3s;
+        }
 
-    .day-title {
-      background: #ffe000; padding: 6px 10px; border-radius: 8px 8px 0 0;
-      font-weight: bold; text-align: center; text-transform: uppercase;
-      margin-top: 10px;
-    }
+        input[type="text"]:focus, input[type="number"]:focus, select:focus {
+            border-color: var(--primary-color);
+            outline: none;
+        }
 
-    table { width: 100%; border-collapse: collapse; background:#fff;
-      border-radius: 0 0 8px 8px; overflow:hidden; font-size:.8rem; }
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
 
-    th,td { border:1px solid #d4d4d4; padding:6px; text-align:center; }
+        button {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.3s, transform 0.1s;
+            color: white;
+        }
 
-    .time-col { background:#f3f4f6; width:90px; font-weight:bold; }
+        button:hover {
+            transform: translateY(-2px);
+        }
 
-    .lesson-cell { min-height:40px; padding:3px; border-radius:4px;
-      font-size:.75rem; font-weight:bold; color:#111827; }
+        #addTeacherButton {
+            background-color: #28a745;
+        }
+        #addTeacherButton:hover {
+            background-color: #218838;
+        }
 
-    /* Cores por professor */
-    .color-0 { background:#bfdbfe; }
-    .color-1 { background:#fed7aa; }
-    .color-2 { background:#bbf7d0; }
-    .color-3 { background:#f9a8d4; }
-    .color-4 { background:#fee2e2; }
-    .color-5 { background:#e9d5ff; }
-    .color-6 { background:#fef08a; }
-    .color-7 { background:#bae6fd; }
-    .color-8 { background:#fecaca; }
-    .color-9 { background:#ddd6fe; }
+        #distributeButton {
+            background: linear-gradient(45deg, #ff416c, #ff4b2b);
+            flex-grow: 1;
+        }
+        #distributeButton:hover {
+            background: linear-gradient(45deg, #e6395e, #e64226);
+        }
 
-    @media print {
-      .no-print { display:none !important; }
-      body { background: #ffffff; }
-    }
-  </style>
+        #clearButton {
+            background-color: #dc3545;
+        }
+        #clearButton:hover {
+            background-color: #c82333;
+        }
+
+        #exportPDF, #exportXLS {
+            background-color: #007bff;
+        }
+        #exportPDF:hover, #exportXLS:hover {
+            background-color: #0056b3;
+        }
+
+        #teacherList {
+            margin-top: 20px;
+            border-top: 1px solid #eee;
+            padding-top: 15px;
+        }
+
+        .teacher-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px;
+            margin-bottom: 8px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            border-left: 5px solid var(--primary-color);
+        }
+
+        .teacher-info {
+            font-weight: 500;
+        }
+
+        .remove-btn {
+            background-color: #dc3545;
+            padding: 5px 10px;
+            font-size: 0.8em;
+        }
+
+        .remove-btn:hover {
+            background-color: #c82333;
+        }
+
+        /* Tabela de Horários */
+        .timetable-container {
+            overflow-x: auto;
+        }
+
+        .timetable {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            min-width: 1000px;
+        }
+
+        .timetable th, .timetable td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+            font-size: 0.9em;
+            height: 50px;
+        }
+
+        .timetable th {
+            background-color: var(--primary-color);
+            color: white;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+        }
+
+        .timetable .time-slot {
+            background-color: #f8f9fa;
+            font-weight: 600;
+            color: var(--primary-color);
+            width: 80px;
+        }
+
+        .day-header {
+            background-color: var(--secondary-color);
+            color: white;
+            font-weight: 700;
+            padding: 10px;
+            margin-top: 20px;
+            border-radius: 8px 8px 0 0;
+        }
+
+        .lesson {
+            border-radius: 5px;
+            padding: 5px;
+            font-size: 0.8em;
+            font-weight: 600;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Cores para os professores (10 cores) */
+        .color-0 { background-color: #ff6347; } /* Tomato */
+        .color-1 { background-color: #4682b4; } /* SteelBlue */
+        .color-2 { background-color: #3cb371; } /* MediumSeaGreen */
+        .color-3 { background-color: #ffa500; } /* Orange */
+        .color-4 { background-color: #9370db; } /* MediumPurple */
+        .color-5 { background-color: #ff69b4; } /* HotPink */
+        .color-6 { background-color: #00ced1; } /* DarkTurquoise */
+        .color-7 { background-color: #f08080; } /* LightCoral */
+        .color-8 { background-color: #6a5acd; } /* SlateBlue */
+        .color-9 { background-color: #20b2aa; } /* LightSeaGreen */
+
+        .stats-container {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #e9ecef;
+            border-radius: 10px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .stat-item {
+            background-color: var(--card-background);
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px var(--shadow-color);
+            border-left: 5px solid var(--primary-color);
+        }
+
+        .stat-item strong {
+            display: block;
+            font-size: 1.1em;
+            color: var(--primary-color);
+        }
+
+        .stat-item span {
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .note {
+            background-color: #fff3cd;
+            border: 1px solid #ffeeba;
+            color: #856404;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            font-size: 0.9em;
+        }
+
+        .error-message {
+            color: #dc3545;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+    </style>
 </head>
-
 <body>
-<div class="container">
+    <div class="container">
+        <h1>📚 Gerador Automático de Horários - Multi-Professor</h1>
 
-  <h1>Gerador Automático de Horários</h1>
+        <div class="card">
+            <h2>⚙️ Configuração de Professores e Disciplinas</h2>
+            <p class="note">
+                <strong>Cargas Horárias Fixas:</strong>
+                Português, Matemática: 4 aulas/semana | Ciências, História, Ed.Física, Geografia: 3 aulas/semana | Arte, Inglês: 2 aulas/semana | Ens. Religioso: 1 aula/semana.
+            </p>
 
-  <!-- PAINEL PRINCIPAL -->
-  <div class="card no-print">
-    <h2>Distribuir professor automaticamente</h2>
+            <div class="input-group">
+                <div>
+                    <label for="teacherNameInput">Nome do Professor</label>
+                    <input type="text" id="teacherNameInput" placeholder="Ex: Maria Silva">
+                </div>
+                <div>
+                    <label for="subjectSelect">Disciplina</label>
+                    <select id="subjectSelect">
+                        <option value="">Selecione a Disciplina</option>
+                        <option value="Português">Português (4 aulas)</option>
+                        <option value="Matemática">Matemática (4 aulas)</option>
+                        <option value="Ciências">Ciências (3 aulas)</option>
+                        <option value="História">História (3 aulas)</option>
+                        <option value="Ed.Física">Ed.Física (3 aulas)</option>
+                        <option value="Geografia">Geografia (3 aulas)</option>
+                        <option value="Arte">Arte (2 aulas)</option>
+                        <option value="Inglês">Inglês (2 aulas)</option>
+                        <option value="Ens. Religioso">Ens. Religioso (1 aula)</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="restDaySelect">Dia de Hora-Atividade</label>
+                    <select id="restDaySelect">
+                        <option value="Nenhum">Nenhum (trabalha todos os dias)</option>
+                        <option value="Segunda-feira">Segunda-feira</option>
+                        <option value="Terça-feira">Terça-feira</option>
+                        <option value="Quarta-feira">Quarta-feira</option>
+                        <option value="Quinta-feira">Quinta-feira</option>
+                        <option value="Sexta-feira">Sexta-feira</option>
+                    </select>
+                </div>
+                <button id="addTeacherButton">➕ Adicionar Professor</button>
+            </div>
 
-    <div class="form-grid">
+            <div id="teacherList">
+                <!-- Professores adicionados serão listados aqui -->
+            </div>
 
-      <div>
-        <label>Professor</label>
-        <input type="text" id="autoTeacherInput" placeholder="Nome do professor">
-      </div>
+            <div class="button-group">
+                <button id="distributeButton">🚀 Distribuir Horários</button>
+                <button id="clearButton">🗑️ Limpar Quadro</button>
+                <button id="exportPDF">📄 Exportar PDF</button>
+                <button id="exportXLS">📊 Exportar XLS</button>
+            </div>
+        </div>
 
-      <div>
-        <label>Disciplina</label>
-        <input type="text" id="autoSubjectInput" placeholder="Ex.: MAT, PORT">
-      </div>
+        <div class="card">
+            <h2>📊 Estatísticas da Distribuição</h2>
+            <div id="statsContainer" class="stats-grid">
+                <!-- Estatísticas serão exibidas aqui -->
+            </div>
+        </div>
 
-      <div>
-        <label>Turmas em que leciona</label>
-        <div id="turmasCheckboxContainer" class="turmas-box"></div>
-      </div>
-
-      <div>
-        <label>Nova turma</label>
-        <input type="text" id="newClassInput">
-        <button id="addClassButton" style="margin-top:4px;">Adicionar turma</button>
-      </div>
-
-      <div>
-        <label>Dia de hora-atividade</label>
-        <select id="autoRestDaySelect"></select>
-      </div>
-
-      <div>
-        <button id="autoDistributeButton">Distribuir automaticamente</button>
-      </div>
-
-      <div>
-        <button class="secondary" id="clearButton">Limpar quadro</button>
-      </div>
-
+        <div class="card">
+            <h2>📅 Quadro de Horários</h2>
+            <div class="timetable-container">
+                <div id="timetableContainer">
+                    <!-- O quadro de horários será gerado aqui -->
+                </div>
+            </div>
+        </div>
     </div>
 
-    <div class="form-grid" style="margin-top:10px;">
-      <div></div><div></div>
-      <div>
-        <button class="export" id="exportPDF">Exportar PDF</button>
-      </div>
-      <div>
-        <button class="export" id="exportXLS">Exportar XLS</button>
-      </div>
-      <div></div><div></div>
-    </div>
-
-  </div>
-
-  <!-- QUADRO -->
-  <div class="card">
-    <h2>Quadro de horários</h2>
-    <div id="tablesContainer"></div>
-  </div>
-
-</div>
-
-<script>
-(function() {
-  // ---------------- CONFIGURAÇÃO INICIAL ----------------
-  const days = ["Segunda-feira","Terça-feira","Quarta-feira","Quinta-feira","Sexta-feira"];
-
-  const timeSlots = [
-    "07:45 - 08:30",
-    "08:30 - 09:15",
-    "09:15 - 10:00",
-    "10:15 - 11:00",
-    "11:00 - 11:45"
-  ];
-
-  let classes = [
-    "6º ano 01","6º ano 02","6º ano 03",
-    "7º ano 01","7º ano 02",
-    "8º ano 01","8º ano 02",
-    "9º ano 01","9º ano 02"
-  ];
-
-  const timetable = {};
-  const teacherColorMap = {};
-  let teacherColorCounter = 0;
-  const COLOR_CODES = [
-    "#bfdbfe","#fed7aa","#bbf7d0","#f9a8d4","#fee2e2",
-    "#e9d5ff","#fef08a","#bae6fd","#fecaca","#ddd6fe"
-  ];
-  const teacherRestDay = {};
-
-  // ---------------- INICIALIZAÇÃO ----------------
-  function initTimetable() {
-    days.forEach(day => {
-      timetable[day] = {};
-      timeSlots.forEach(time => {
-        timetable[day][time] = {};
-        classes.forEach(cls => {
-          timetable[day][time][cls] = null;
-        });
-      });
-    });
-  }
-
-  function initDaySelect() {
-    const sel = document.getElementById("autoRestDaySelect");
-    days.forEach(d => {
-      const op = document.createElement("option");
-      op.value = d;
-      op.textContent = d;
-      sel.appendChild(op);
-    });
-  }
-
-  function renderClassCheckboxes() {
-    const cont = document.getElementById("turmasCheckboxContainer");
-    cont.innerHTML = "";
-    classes.forEach(cls => {
-      const label = document.createElement("label");
-      label.className = "turma-item";
-      const cb = document.createElement("input");
-      cb.type = "checkbox";
-      cb.name = "turmaDist";
-      cb.value = cls;
-      cb.checked = true;
-      label.appendChild(cb);
-      label.appendChild(document.createTextNode(" " + cls));
-      cont.appendChild(label);
-    });
-  }
-
-  function getColorIndex(teacherUpper) {
-    if (!teacherColorMap[teacherUpper]) {
-      teacherColorMap[teacherUpper] = teacherColorCounter % 10;
-      teacherColorCounter++;
-    }
-    return teacherColorMap[teacherUpper];
-  }
-
-  function getColorClass(teacherUpper) {
-    return "color-" + getColorIndex(teacherUpper);
-  }
-
-  // ---------------- VERIFICAÇÕES ----------------
-  function teacherBusy(teacherUpper, day, time) {
-    const slots = timetable[day][time];
-    for (const cls of Object.keys(slots)) {
-      const l = slots[cls];
-      if (l && l.teacherUpper === teacherUpper) return true;
-    }
-    return false;
-  }
-
-  function countSubjectInDay(subjectUpper, cls, day) {
-    let c = 0;
-    timeSlots.forEach(time => {
-      const l = timetable[day][time][cls];
-      if (l && l.subjectUpper === subjectUpper) c++;
-    });
-    return c;
-  }
-
-  // ---------------- ADICIONAR TURMA ----------------
-  function addClass() {
-    const input = document.getElementById("newClassInput");
-    const name = input.value.trim();
-    if (!name) {
-      alert("Digite uma turma.");
-      return;
-    }
-    if (classes.includes(name)) {
-      alert("Essa turma já existe.");
-      return;
-    }
-    classes.push(name);
-    days.forEach(day => {
-      timeSlots.forEach(time => {
-        timetable[day][time][name] = null;
-      });
-    });
-    input.value = "";
-    renderClassCheckboxes();
-    renderTables();
-  }
-
-  // ---------------- DISTRIBUIÇÃO AUTOMÁTICA ----------------
-  function autoDistribute() {
-  const teacherName = document.getElementById("autoTeacherInput").value.trim();
-  const subjectName = document.getElementById("autoSubjectInput").value.trim();
-  const restDay = document.getElementById("autoRestDaySelect").value;
-
-  if (!teacherName || !subjectName) {
-    alert("Preencha Professor e Disciplina.");
-    return;
-  }
-
-  const teacherUpper = teacherName.toUpperCase();
-  const subjectUpper = subjectName.toUpperCase();
-  teacherRestDay[teacherUpper] = restDay;
-  getColorIndex(teacherUpper); // garante cor fixa para o professor
-
-  const selectedClasses = Array.from(
-    document.querySelectorAll("input[name='turmaDist']:checked")
-  ).map(i => i.value);
-
-  if (selectedClasses.length === 0) {
-    alert("Selecione pelo menos uma turma.");
-    return;
-  }
-
-  // NOVA LÓGICA:
-  // para cada dia/horário, tenta colocar o professor em UMA turma disponível.
-  for (const day of days) {
-
-    if (day === restDay) continue; // dia de hora-atividade do professor
-
-    for (const time of timeSlots) {
-
-      // se o professor já está dando aula em alguma turma nesse horário, pula
-      if (teacherBusy(teacherUpper, day, time)) continue;
-
-      // percorre as turmas selecionadas procurando a primeira vaga válida
-      for (const cls of selectedClasses) {
-
-        // se já tem aula nessa turma nesse horário, pula
-        if (timetable[day][time][cls] !== null) continue;
-
-        // limita a, no máximo, 2 aulas dessa disciplina por dia na mesma turma
-        if (countSubjectInDay(subjectUpper, cls, day) >= 2) continue;
-
-        // achou uma vaga: agenda a aula e passa para o próximo horário
-        timetable[day][time][cls] = {
-          teacherName,
-          teacherUpper,
-          subjectName,
-          subjectUpper
+    <script>
+        // Variáveis globais
+        const days = ["Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira"];
+        const timeSlots = ["07:45 - 08:30", "08:30 - 09:15", "09:15 - 10:00", "10:15 - 11:00", "11:00 - 11:45"];
+        const classes = ["6º ano 01", "6º ano 02", "6º ano 03", "7º ano 01", "7º ano 02", "8º ano 01", "8º ano 02", "9º ano 01", "9º ano 02"]; // Turmas fixas
+        
+        // Cargas horárias fixas por disciplina
+        const fixedLoads = {
+            "Português": 4,
+            "Matemática": 4,
+            "Ciências": 3,
+            "História": 3,
+            "Ed.Física": 3,
+            "Geografia": 3,
+            "Arte": 2,
+            "Inglês": 2,
+            "Ens. Religioso": 1
         };
 
-        // professor já está ocupando esse horário em alguma turma
-        break;
-      }
-    }
-  }
+        let teachers = []; // Lista de objetos { name, subject, restDay, load }
+        let timetable = {}; // Estrutura de dados do horário
+        let teacherColorMap = {};
+        let teacherColorCounter = 0;
 
-  renderTables();
-  alert("Distribuição concluída.");
-}
+        // Inicialização do Quadro de Horários
+        function initializeTimetable() {
+            timetable = {};
+            days.forEach(day => {
+                timetable[day] = {};
+                timeSlots.forEach(time => {
+                    timetable[day][time] = {};
+                    classes.forEach(className => {
+                        timetable[day][time][className] = null; // null = slot vazio
+                    });
+                });
+            });
+        }
 
+        // --- Funções de Utilitário ---
 
-  // ---------------- LIMPAR QUADRO ----------------
-  function clearAll() {
-    if (!confirm("Deseja limpar todo o quadro?")) return;
-    initTimetable();
-    for (const k in teacherRestDay) delete teacherRestDay[k];
-    for (const k in teacherColorMap) delete teacherColorMap[k];
-    teacherColorCounter = 0;
-    document.getElementById("autoTeacherInput").value = "";
-    document.getElementById("autoSubjectInput").value = "";
-    renderTables();
-  }
+        function getColorIndex(teacherUpper) {
+            if (!teacherColorMap[teacherUpper]) {
+                teacherColorMap[teacherUpper] = teacherColorCounter % 10;
+                teacherColorCounter++;
+            }
+            return teacherColorMap[teacherUpper];
+        }
 
-  // ---------------- EXPORTAR PDF ----------------
-  function exportPDF() {
-    window.print();
-  }
+        function getColorClass(teacherUpper) {
+            return "color-" + getColorIndex(teacherUpper);
+        }
 
-  // ---------------- EXPORTAR XLS ----------------
-  function exportXLS() {
-    let html = `
-    <html><head><meta charset="UTF-8">
-    <style>
-      table { border-collapse: collapse; }
-      th, td { border:1px solid #000; padding:4px; text-align:center; }
-    </style>
-    </head><body>`;
+        function teacherBusy(teacherUpper, day, time) {
+            for (const className of classes) {
+                const lesson = timetable[day][time][className];
+                if (lesson && lesson.teacherUpper === teacherUpper) {
+                    return true;
+                }
+            }
+            return false;
+        }
 
-    days.forEach(day => {
-      html += `<h3>${day}</h3><table><thead><tr><th>Horário</th>`;
-      classes.forEach(cls => html += `<th>${cls}</th>`);
-      html += "</tr></thead><tbody>";
+        function countSubjectInDay(subjectUpper, className, day) {
+            let count = 0;
+            for (const time of timeSlots) {
+                const lesson = timetable[day][time][className];
+                if (lesson && lesson.subjectUpper === subjectUpper) {
+                    count++;
+                }
+            }
+            return count;
+        }
 
-      timeSlots.forEach(time => {
-        html += `<tr><td>${time}</td>`;
-        classes.forEach(cls => {
-          const l = timetable[day][time][cls];
-          if (!l) {
-            html += "<td></td>";
-          } else {
-            const idx = getColorIndex(l.teacherUpper);
-            const bg = COLOR_CODES[idx];
-            html += `<td style="background:${bg};font-weight:bold">${l.subjectName}<br>${l.teacherName}</td>`;
-          }
-        });
-        html += "</tr>";
-      });
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
 
-      html += "</tbody></table><br>";
-    });
+        // --- Funções de Renderização ---
 
-    html += "</body></html>";
+        function renderTeacherList() {
+            const list = document.getElementById('teacherList');
+            list.innerHTML = '';
+            teachers.forEach((t, index) => {
+                const item = document.createElement('div');
+                item.className = 'teacher-item';
+                item.innerHTML = `
+                    <div class="teacher-info">
+                        <strong>${t.name}</strong> - ${t.subject} (${t.load * classes.length} aulas totais)
+                        ${t.restDay !== 'Nenhum' ? `(Hora-Atividade: ${t.restDay})` : ''}
+                    </div>
+                    <button class="remove-btn" onclick="removeTeacher(${index})">Remover</button>
+                `;
+                list.appendChild(item);
+            });
+        }
 
-    const blob = new Blob([html], { type: "application/vnd.ms-excel" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "horario_escolar.xls";
-    a.click();
-    URL.revokeObjectURL(url);
-  }
+        function renderTimetable() {
+            const container = document.getElementById('timetableContainer');
+            container.innerHTML = '';
 
-  // ---------------- RENDER TABELAS ----------------
-  function renderTables() {
-    const cont = document.getElementById("tablesContainer");
-    cont.innerHTML = "";
+            days.forEach(day => {
+                const dayHeader = document.createElement('h3');
+                dayHeader.className = 'day-header';
+                dayHeader.textContent = day;
+                container.appendChild(dayHeader);
 
-    days.forEach(day => {
-      const title = document.createElement("div");
-      title.className = "day-title";
-      title.textContent = day;
-      cont.appendChild(title);
+                const table = document.createElement('table');
+                table.className = 'timetable';
+                
+                // Cabeçalho da tabela
+                let headerHtml = '<thead><tr><th>Horário</th>';
+                classes.forEach(c => {
+                    headerHtml += `<th>${c}</th>`;
+                });
+                headerHtml += '</tr></thead>';
+                table.innerHTML = headerHtml;
 
-      const table = document.createElement("table");
-      const thead = document.createElement("thead");
-      const headRow = document.createElement("tr");
+                // Corpo da tabela
+                let bodyHtml = '<tbody>';
+                timeSlots.forEach(time => {
+                    bodyHtml += `<tr><td class="time-slot">${time}</td>`;
+                    classes.forEach(className => {
+                        const lesson = timetable[day][time][className];
+                        if (lesson) {
+                            const colorClass = getColorClass(lesson.teacherUpper);
+                            bodyHtml += `<td class="${colorClass}">
+                                <div class="lesson">
+                                    <span>${lesson.subjectName}</span>
+                                    <span>${lesson.teacherName}</span>
+                                </div>
+                            </td>`;
+                        } else {
+                            bodyHtml += `<td></td>`;
+                        }
+                    });
+                    bodyHtml += '</tr>';
+                });
+                bodyHtml += '</tbody>';
+                table.innerHTML += bodyHtml;
+                container.appendChild(table);
+            });
+        }
 
-      const thTime = document.createElement("th");
-      thTime.className = "time-col";
-      thTime.textContent = "Horário";
-      headRow.appendChild(thTime);
+        function renderStats(stats) {
+            const container = document.getElementById('statsContainer');
+            container.innerHTML = '';
 
-      classes.forEach(cls => {
-        const th = document.createElement("th");
-        th.textContent = cls;
-        headRow.appendChild(th);
-      });
+            // Estatísticas por Turma
+            classes.forEach(className => {
+                let totalAssigned = 0;
+                let totalRequired = 0;
+                
+                stats.teachers.forEach(t => {
+                    const required = fixedLoads[t.subject];
+                    totalRequired += required;
+                    
+                    // Contar quantas aulas daquela disciplina foram alocadas para a turma
+                    let assignedForClass = 0;
+                    days.forEach(day => {
+                        timeSlots.forEach(time => {
+                            const lesson = timetable[day][time][className];
+                            if (lesson && lesson.subjectName === t.subject) {
+                                assignedForClass++;
+                            }
+                        });
+                    });
+                    totalAssigned += assignedForClass;
+                });
 
-      thead.appendChild(headRow);
-      table.appendChild(thead);
+                const item = document.createElement('div');
+                item.className = 'stat-item';
+                item.innerHTML = `
+                    <strong>${className}</strong>
+                    <span>${totalAssigned} / ${totalRequired} aulas totais</span>
+                `;
+                container.appendChild(item);
+            });
 
-      const tbody = document.createElement("tbody");
+            // Estatísticas por Professor
+            stats.teachers.forEach(t => {
+                const item = document.createElement('div');
+                item.className = 'stat-item';
+                const totalRequired = t.load * classes.length;
+                let statusText = `${t.assigned} / ${totalRequired} aulas alocadas`;
+                let statusClass = '';
 
-      timeSlots.forEach(time => {
-        const tr = document.createElement("tr");
-        const tdTime = document.createElement("td");
-        tdTime.className = "time-col";
-        tdTime.textContent = time;
-        tr.appendChild(tdTime);
+                if (t.assigned < totalRequired) {
+                    statusText += `<span class="error-message"> (Faltam ${totalRequired - t.assigned} aulas)</span>`;
+                    statusClass = 'error-stat';
+                } else if (t.assigned > totalRequired) {
+                    statusText += `<span class="error-message"> (Excedeu ${t.assigned - totalRequired} aulas)</span>`;
+                    statusClass = 'error-stat';
+                }
 
-        classes.forEach(cls => {
-          const td = document.createElement("td");
-          const l = timetable[day][time][cls];
-          if (l) {
-            const div = document.createElement("div");
-            div.className = "lesson-cell " + getColorClass(l.teacherUpper);
-            div.innerHTML = `${l.subjectName}<br>${l.teacherName}`;
-            td.appendChild(div);
-          }
-          tr.appendChild(td);
-        });
+                item.innerHTML = `
+                    <strong>${t.name} (${t.subject})</strong>
+                    <span class="${statusClass}">${statusText}</span>
+                `;
+                container.appendChild(item);
+            });
+        }
 
-        tbody.appendChild(tr);
-      });
+        // --- Funções de Ação ---
 
-      table.appendChild(tbody);
-      cont.appendChild(table);
-    });
-  }
+        function addTeacher() {
+            const nameInput = document.getElementById('teacherNameInput');
+            const subjectSelect = document.getElementById('subjectSelect');
+            const restDaySelect = document.getElementById('restDaySelect');
 
-  // ---------------- INICIAR ----------------
-  initTimetable();
-  initDaySelect();
-  renderClassCheckboxes();
-  renderTables();
+            const name = nameInput.value.trim();
+            const subject = subjectSelect.value;
+            const restDay = restDaySelect.value;
 
-  document.getElementById("autoDistributeButton").onclick = autoDistribute;
-  document.getElementById("clearButton").onclick = clearAll;
-  document.getElementById("exportPDF").onclick = exportPDF;
-  document.getElementById("exportXLS").onclick = exportXLS;
-  document.getElementById("addClassButton").onclick = addClass;
-})();
-</script>
+            if (!name || !subject) {
+                alert('Preencha o nome do professor e selecione a disciplina.');
+                return;
+            }
 
+            const load = fixedLoads[subject];
+            if (load === undefined) {
+                alert('Disciplina selecionada inválida.');
+                return;
+            }
+
+            // Verifica se já existe um professor com o mesmo nome
+            if (teachers.some(t => t.name.toUpperCase() === name.toUpperCase())) {
+                alert('Já existe um professor com este nome. Por favor, use um nome único (ex: Maria S. ou Maria C.).');
+                return;
+            }
+
+            teachers.push({
+                name: name,
+                subject: subject,
+                subjectUpper: subject.toUpperCase(),
+                restDay: restDay,
+                load: load,
+                assigned: 0 // Inicializa a contagem de aulas alocadas
+            });
+
+            nameInput.value = '';
+            subjectSelect.value = '';
+            restDaySelect.value = 'Nenhum';
+
+            renderTeacherList();
+        }
+
+        function removeTeacher(index) {
+            teachers.splice(index, 1);
+            renderTeacherList();
+        }
+
+        function clearTimetable() {
+            initializeTimetable();
+            teachers.forEach(t => t.assigned = 0);
+            renderTimetable();
+            renderStats({ classes: {}, teachers: [] });
+        }
+
+        // --- Algoritmo de Distribuição (Greedy Otimizado) ---
+
+        function distributeTimetable() {
+            clearTimetable(); // Limpa antes de começar
+            
+            if (teachers.length === 0) {
+                alert("Adicione pelo menos um professor para distribuir.");
+                return;
+            }
+
+            // 1. Criar a lista de todas as aulas a serem alocadas
+            let allLessons = [];
+            teachers.forEach(t => {
+                classes.forEach(className => {
+                    for (let i = 0; i < t.load; i++) {
+                        allLessons.push({
+                            teacher: t.name,
+                            teacherUpper: t.name.toUpperCase(), // Usar o nome do professor como identificador único
+                            subject: t.subject,
+                            subjectUpper: t.subject.toUpperCase(),
+                            className: className,
+                            restDay: t.restDay,
+                            maxPerDay: 2 // Valor fixo para o limite de aulas por dia
+                        });
+                    }
+                });
+            });
+
+            // 2. Ordenar as aulas (Heurística: aulas mais restritas primeiro)
+            // Prioridade: 1. Professores com dia de folga. 2. Disciplinas com maior carga horária.
+            allLessons.sort((a, b) => {
+                const aRestricted = a.restDay !== 'Nenhum' ? 1 : 0;
+                const bRestricted = b.restDay !== 'Nenhum' ? 1 : 0;
+                
+                if (aRestricted !== bRestricted) return bRestricted - aRestricted; // Prioriza quem tem dia de folga
+                return b.load - a.load; // Prioriza carga horária maior
+            });
+
+            // 3. Tentar alocar cada aula sequencialmente (Greedy)
+            let unassignedLessons = [];
+
+            for (const lesson of allLessons) {
+                let slotFound = false;
+                
+                // Criar lista de slots disponíveis (dia, horário) para a turma da aula
+                let availableSlots = [];
+                days.forEach(day => {
+                    if (day === lesson.restDay) return; // pula dia de hora-atividade
+                    timeSlots.forEach(time => {
+                        availableSlots.push({ day, time });
+                    });
+                });
+
+                // Embaralhar slots para distribuição mais uniforme
+                shuffleArray(availableSlots);
+
+                for (const slot of availableSlots) {
+                    const { day, time } = slot;
+                    const className = lesson.className;
+
+                    // 3.1. Conflito de Professor (mesmo professor em 2 lugares ao mesmo tempo)
+                    if (teacherBusy(lesson.teacherUpper, day, time)) {
+                        continue;
+                    }
+
+                    // 3.2. Limite de Aulas por Dia (na mesma turma)
+                    if (countSubjectInDay(lesson.subjectUpper, className, day) >= lesson.maxPerDay) {
+                        continue;
+                    }
+
+                    // 3.3. Slot já ocupado por outra disciplina na mesma turma
+                    if (timetable[day][time][className] !== null) {
+                        continue;
+                    }
+
+                    // Se chegou aqui, o slot é seguro. Alocar a aula.
+                    timetable[day][time][className] = {
+                        teacherName: lesson.teacher,
+                        teacherUpper: lesson.teacherUpper,
+                        subjectName: lesson.subject,
+                        subjectUpper: lesson.subjectUpper
+                    };
+
+                    // Atualizar a contagem de aulas alocadas para o professor
+                    const teacherObj = teachers.find(t => t.name === lesson.teacher && t.subject === lesson.subject);
+                    if (teacherObj) {
+                        teacherObj.assigned++;
+                    }
+
+                    slotFound = true;
+                    break; // Passa para a próxima aula
+                }
+
+                if (!slotFound) {
+                    unassignedLessons.push(lesson);
+                }
+            }
+
+            // 4. Calcular Estatísticas
+            const stats = {
+                classes: {},
+                teachers: teachers.map(t => ({ ...t })) // Copia para não alterar o original
+            };
+
+            // Recalcular assigned para o caso de o backtracking ter falhado e o assigned ter ficado incorreto
+            teachers.forEach(t => t.assigned = 0);
+            
+            classes.forEach(className => {
+                let classAssigned = 0;
+                days.forEach(day => {
+                    timeSlots.forEach(time => {
+                        const lesson = timetable[day][time][className];
+                        if (lesson) {
+                            classAssigned++;
+                            const teacherObj = teachers.find(t => t.name === lesson.teacherName && t.subject === lesson.subjectName);
+                            if (teacherObj) {
+                                teacherObj.assigned++;
+                            }
+                        }
+                    });
+                });
+                stats.classes[className] = { assigned: classAssigned };
+            });
+
+            stats.teachers = teachers.map(t => ({ ...t })); // Atualiza as estatísticas do professor
+
+            // 5. Renderizar Resultados
+            renderTimetable();
+            renderStats(stats);
+
+            if (unassignedLessons.length === 0) {
+                alert("✅ Distribuição de horários concluída com sucesso! Todas as aulas foram alocadas.");
+            } else {
+                const unassignedCount = unassignedLessons.length;
+                alert(`⚠️ Distribuição concluída, mas ${unassignedCount} aulas não puderam ser alocadas devido a conflitos de horário ou restrições. Verifique as estatísticas.`);
+            }
+        }
+
+        // --- Event Listeners ---
+
+        document.getElementById('addTeacherButton').addEventListener('click', addTeacher);
+        document.getElementById('distributeButton').addEventListener('click', distributeTimetable);
+        document.getElementById('clearButton').addEventListener('click', clearTimetable);
+        // document.getElementById('exportPDF').addEventListener('click', exportPDF); // Implementar depois
+        // document.getElementById('exportXLS').addEventListener('click', exportXLS); // Implementar depois
+
+        // Inicialização
+        initializeTimetable();
+        renderTimetable();
+    </script>
 </body>
 </html>
-
